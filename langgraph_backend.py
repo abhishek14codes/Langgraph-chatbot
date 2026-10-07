@@ -10,10 +10,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 llm = ChatGoogleGenerativeAI(
     model="gemini-3.5-flash-lite",
     api_key=os.getenv("GEMINI_API_KEY")  
 )
+
+
 
 class ChatState(TypedDict):
     messages : Annotated[list[BaseMessage],add_messages]
@@ -26,8 +29,8 @@ def chat_node(state:ChatState):
 checkpointer = InMemorySaver() 
 
 graph = StateGraph(ChatState)
-graph.add_node('chat_node' . chat_node)
+graph.add_node('chat_node' , chat_node)
 graph.add_edge(START,'chat_node')
 graph.add_edge('chat_node',END)
 
-chat_bot = graph.compile(checkpointer=checkpointer)
+chatbot = graph.compile(checkpointer=checkpointer)
