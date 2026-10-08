@@ -46,4 +46,3 @@ if user_input:
         ai_message = st.write_stream(generate_content(user_input))
 
     st.session_state['message_history'].append({'role':'assistant' , 'content': ai_message})
-    

@@ -1,6 +1,6 @@
 from langgraph.graph import START , END , StateGraph
 from typing import TypedDict , Annotated
-from langchain_core.messages import BaseMessage 
+from langchain_core.messages import BaseMessage , HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph.message import add_messages
