@@ -2,7 +2,7 @@ import streamlit as st
 from langgraph_backend import chatbot
 from langchain_core.messages import HumanMessage
 import uuid
-
+from langgraph_backend import llm
 
 #*******utility functions***************
 def generate_thread_id():
@@ -19,13 +19,27 @@ def add_thread(thread_id):
 def load_conversation(thread_id):
     return chatbot.get_state(config={'configurable':{'thread_id':thread_id}}).values['messages']
 def get_content(content):
+    text = ""
     if isinstance(content,str):
         text = content
     elif isinstance(content,list):
         for block in content:
             if isinstance(block,dict) and block.get("type")=="text":
-                text = block.get("text","")
+                text += block.get("text","")
     return text 
+def gen_summary(thread_id):
+        messages= load_conversation(thread_id)
+        temp_msg = [] 
+        for msg in messages:
+            if isinstance(msg,HumanMessage):
+                role='user'
+            else:
+                role='assistant'
+            temp_msg.append({'role':role , 'content':get_content(msg.content)})
+        prompt = f'generate a one line summary/title for following conversation {temp_msg}'
+        response = llm.invoke(prompt)
+        title = get_content(response.content)
+        return title
 
 #********session setup**********
 
@@ -50,6 +64,8 @@ if 'thread_id' not in st.session_state:
 if 'chat_threads' not in st.session_state:
     st.session_state['chat_threads'] = []
 add_thread(st.session_state['thread_id'])
+if 'chat_titles' not in st.session_state:
+    st.session_state['chat_titles']={}
 
 CONFIG = {'configurable':{'thread_id':st.session_state['thread_id']}}
 
@@ -62,7 +78,8 @@ if st.sidebar.button('New Chat'):
 st.sidebar.header('My conversations')
 
 for thread_id in st.session_state['chat_threads'][::-1]:
-    if st.sidebar.button(str(thread_id)): 
+    title = st.session_state['chat_titles'].get(thread_id,str(thread_id))
+    if st.sidebar.button(title): 
         st.session_state['thread_id'] = thread_id
         messages= load_conversation(thread_id)
         temp_msg = [] 
@@ -94,3 +111,7 @@ if user_input:
         ai_message = st.write_stream(generate_content(user_input))
 
     st.session_state['message_history'].append({'role':'assistant' , 'content': ai_message})
+
+    if st.session_state['thread_id'] not in st.session_state['chat_titles']:
+        title = gen_summary(st.session_state['thread_id'])
+        st.session_state['chat_titles'][st.session_state['thread_id']] = title 
