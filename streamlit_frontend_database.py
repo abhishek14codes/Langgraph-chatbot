@@ -1,6 +1,6 @@
 import streamlit as st
-from langgraph_database_backend import chatbot , retrive_threads
-from langchain_core.messages import HumanMessage
+from langgraph_tool_backend import chatbot , retrive_threads
+from langchain_core.messages import HumanMessage , AIMessage
 import uuid
 from langgraph_backend import llm
 
@@ -50,14 +50,15 @@ def generate_content(user_input):
     config=CONFIG,
     stream_mode="messages"
     ) :
-        content = message.content 
-        if isinstance(content,str):
-            yield content
-        elif isinstance(content,list) :
-            for block in content:
-                if isinstance(block,dict) and block.get("type") == "text" :
-                    yield block.get("text" , "")
-#********session setup**********
+        if isinstance(message,AIMessage):
+            content = message.content 
+            if isinstance(content,str):
+                yield content
+            elif isinstance(content,list) :
+                for block in content:
+                    if isinstance(block,dict) and block.get("type") == "text" :
+                        yield block.get("text" , "")
+    #********session setup**********
 
 
 if 'message_history' not in st.session_state:
@@ -70,8 +71,14 @@ add_thread(st.session_state['thread_id'])
 if 'chat_titles' not in st.session_state:
     st.session_state['chat_titles']={}
 
-CONFIG = {'configurable':{'thread_id':st.session_state['thread_id']}}
-
+# CONFIG = {'configurable':{'thread_id':st.session_state['thread_id']}}
+CONFIG = {
+        "configurable": {"thread_id": st.session_state["thread_id"]},
+        "metadata": {
+            "thread_id": st.session_state["thread_id"]
+        },
+        "run_name": "chat_turn",
+    }
 #********Sidebar UI *******************
 st.sidebar.title('LangGraph ChatBot')
 
@@ -118,4 +125,4 @@ if user_input:
     if current_thread not in st.session_state['chat_titles']:
         title = gen_summary(current_thread)
         st.session_state['chat_titles'][current_thread] = title 
-        
+        st.rerun()
