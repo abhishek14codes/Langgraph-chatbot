@@ -1,8 +1,10 @@
 import streamlit as st
-from langgraph_tool_backend import chatbot , retrive_threads
+from langgraph_database_backend import chatbot , retrive_threads , raw_llm as llm
 from langchain_core.messages import HumanMessage , AIMessage
+from rag_tools import ingest_file
+import tempfile
 import uuid
-from langgraph_backend import llm
+import os
 
 #*******utility functions***************
 def generate_thread_id():
@@ -84,6 +86,38 @@ st.sidebar.title('LangGraph ChatBot')
 
 if st.sidebar.button('New Chat'):
     reset_chat()
+
+# ──── File Upload Section ────────────────────────────────────
+st.sidebar.header('📄 Upload Documents')
+uploaded_files = st.sidebar.file_uploader(
+    "Upload PDF or TXT files for RAG",
+    type=["pdf", "txt"],
+    accept_multiple_files=True,
+)
+
+if uploaded_files:
+    for uploaded_file in uploaded_files:
+        # Save uploaded file to a temp location so loaders can read it
+        with tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=os.path.splitext(uploaded_file.name)[1],
+        ) as tmp:
+            tmp.write(uploaded_file.getvalue())
+            tmp_path = tmp.name
+
+        # Ingest into vector store
+        with st.sidebar.status(f"Processing {uploaded_file.name}..."):
+            result = ingest_file(tmp_path)
+
+        if "error" in result:
+            st.sidebar.error(result["error"])
+        else:
+            st.sidebar.success(
+                f"✅ {result['file']}: {result['new_chunks_added']} new chunks added"
+            )
+
+        # Clean up temp file
+        os.unlink(tmp_path)
 
 st.sidebar.header('My conversations')
 

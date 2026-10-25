@@ -4,3 +4,10 @@ streamlit
 langchain-google-genai
 python-dotenv
 langgraph-checkpoint-sqlite
+langchain-chroma
+langchain-community
+pypdf
+langchain-openai
+langchain-text-splitters
+duckduckgo-search
+requests
